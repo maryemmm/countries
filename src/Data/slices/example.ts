@@ -42,7 +42,7 @@ export const exampleFetchDataWithParamsAsync = createAsyncThunk(
     let data;
     try {
       const response = await axiosInstance.get(`/all/`,{params:{fields:queries?.fields}})
-      data = await response.data;
+      data = await response.data.slice(0,8);
       if (response.status === 200) {
          return data
       }

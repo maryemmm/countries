@@ -7,20 +7,13 @@ import Input from "../../Inputs/Input";
 import ExtraForm from './ExtraForm';
 import FormAction from './FormAction';
 import { useNavigate } from "react-router-dom"
+import supabase from '../../../Utils/api';
 
 const fields=loginFields;
 let fieldsState:any = {};
 fields.forEach(field=>fieldsState[field.id]='');
 
 export default function Login(){
-    const {isAuthenticated}=useAppSelector(state=>state.auth)
-    const navigate=useNavigate()
-
-    useEffect(()=>{
-        if(isAuthenticated){
-            navigate('/countries')
-        }
-    },[isAuthenticated])
 
     const [loginState,setLoginState]=useState(fieldsState);
 
@@ -34,20 +27,29 @@ export default function Login(){
     }
 
     const dispatch=useAppDispatch()
-
-    const authenticateUser = () =>{
-        const { email, password } = loginState;
-        const hardcodedCredentials = { email: 'admin@admin.com', password: 'admin123' };
-        if (email === hardcodedCredentials.email && password === hardcodedCredentials.password) {
-           toast.success('Authentication successful')
-           dispatch(handleUserAuthentication({isAuthenticated:true}))
-           navigate('/countries');
-        } else {
-           dispatch(handleUserAuthentication({isAuthenticated:false}))
-           toast.error('Authentication failed')
+    const navigate=useNavigate()
+    const authenticateUser =async () =>{
+      const { email, password } = loginState
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if(!error){
+        toast.success('Logged in successfully')
+        const settedSession = await supabase.auth.setSession({
+          access_token:data?.session?.access_token,
+          refresh_token:data?.session?.refresh_token,
+        })
+ 
+         //const forgetPassword = await supabase.auth.resetPasswordForEmail(email, {
+         //   redirectTo: 'https://localhost:3000/update-password',
+         // })
+        navigate('/countries')
+        }
+        else if(error?.status===400 && error){
+        toast.error(error?.message)
         }
     }
-
     return(
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
         <div className="-space-y-px">
